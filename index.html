@@ -111,6 +111,7 @@
   .key.clear:active { box-shadow: 0 1px 0 #c95a4c; }
   .key.back { background: var(--back); box-shadow: 0 6px 0 #c98a3a; }
   .key.back:active { box-shadow: 0 1px 0 #c98a3a; }
+  .key:disabled { opacity: .4; cursor: default; transform: none; }
   .key svg { width: 1em; height: 1em; vertical-align: middle; }
 
   .speak {
@@ -286,7 +287,7 @@ function toast(msg) {
 }
 
 function press(k) {
-  if (speaking) stop();
+  if (speaking) return;              // keys are locked while talking
   if (k === "C") value = "0";
   else if (k === "B") value = value.length > 1 ? value.slice(0, -1) : "0";
   else {
@@ -302,6 +303,7 @@ document.getElementById("pad").addEventListener("click", e => {
   if (b) press(b.dataset.k);
 });
 document.addEventListener("keydown", e => {
+  if (speaking && e.key !== "Enter" && e.key !== " ") return;
   if (/^[0-9]$/.test(e.key)) press(e.key);
   else if (e.key === "Backspace") press("B");
   else if (e.key === "Escape") press("C");
@@ -340,6 +342,7 @@ function setSpeakingUI(on) {
   speaking = on;
   $speak.classList.toggle("stop", on);
   $label.textContent = on ? "Stop" : "Say it!";
+  document.querySelectorAll("#pad button").forEach(b => b.disabled = on);
 }
 
 function stop() {
