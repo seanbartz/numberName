@@ -315,7 +315,8 @@ document.addEventListener("keydown", e => {
 
 /* ================= Speech ================= */
 const synth = window.speechSynthesis;
-let voice = null, speaking = false, runId = 0;
+let voice = null, speaking = false, runId = 0, startedAt = 0;
+const STOP_LOCKOUT_MS = 500;        // ignore Stop right after Say it! (accidental double tap)
 
 function pickVoice() {
   if (!synth) return;
@@ -353,13 +354,17 @@ function stop() {
 }
 
 function toggleSpeak() {
-  if (speaking) { stop(); return; }
+  if (speaking) {
+    if (Date.now() - startedAt >= STOP_LOCKOUT_MS) stop();
+    return;
+  }
   if (!synth) { toast("No voice on this device"); return; }
   synth.cancel();
   const groups = toGroups(value);
   const chunks = value === "0" ? [{ i: 0, text: "zero" }]
     : groups.map((g, i) => ({ i, text: g.words })).filter(c => c.text);
   const id = ++runId;
+  startedAt = Date.now();
   setSpeakingUI(true);
   // speak one group at a time: lets us highlight it and avoids the
   // long-utterance cutoff some browsers have
